@@ -77,6 +77,7 @@ ENV CLONE_TAG=ssd
 RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/RamatovInomjon/caffe.git . && \
     for req in $(cat python/requirements.txt) pydot; do pip install $req; done && \
     mkdir build \
+    && cp Makefile.config.example Makefile.config \
     #&& cd build && \
     #cmake -DUSE_CUDNN=1 .. && \
     && make all -j"$(nproc)" \ 
