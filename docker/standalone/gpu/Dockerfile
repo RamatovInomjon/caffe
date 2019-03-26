@@ -1,5 +1,5 @@
 FROM nvidia/cuda:7.5-cudnn5-devel-ubuntu14.04
-MAINTAINER caffe-maint@googlegroups.com
+MAINTAINER simcam
 
 RUN apt-get update && apt-get upgrade && apt-get -y dist-upgrade && apt-get -y autoremove && apt-get install -y --no-install-recommends \
         build-essential \
@@ -60,7 +60,13 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip
     && mkdir build \
     && cd build \
     && cmake ../ \
-    && make install \
+    && make install  \
+    && rm /${OPENCV_VERSION}.zip \
+    && rm -r /opencv-${OPENCV_VERSION}
+RUN ln -s \
+  /usr/local/python/cv2/python-3.7/cv2.cpython-37m-x86_64-linux-gnu.so \
+/usr/local/lib/python3.7/site-packages/cv2.so
+
 
 ENV CAFFE_ROOT=/opt/caffe
 WORKDIR $CAFFE_ROOT
@@ -68,11 +74,15 @@ WORKDIR $CAFFE_ROOT
 # FIXME: clone a specific git tag and use ARG instead of ENV once DockerHub supports this.
 ENV CLONE_TAG=ssd
 
-RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git . && \
+RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/RamatovInomjon/caffe.git . && \
     for req in $(cat python/requirements.txt) pydot; do pip install $req; done && \
-    mkdir build && cd build && \
-    cmake -DUSE_CUDNN=1 .. && \
-    make -j"$(nproc)"
+    mkdir build \
+    #&& cd build && \
+    #cmake -DUSE_CUDNN=1 .. && \
+    && make all -j"$(nproc)" \ 
+    && make test -j"$(nproc)" \ 
+    && make runtest -j"$(nproc)" \ 
+    && make pycaffe -j"$(nproc)" \
 
 ENV PYCAFFE_ROOT $CAFFE_ROOT/python
 ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
