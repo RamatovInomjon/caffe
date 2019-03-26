@@ -1,7 +1,8 @@
-FROM nvidia/cuda:7.5-cudnn5-devel-ubuntu14.04
+FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
 MAINTAINER simcam
 
-RUN apt-get update && apt-get upgrade && apt-get -y dist-upgrade && apt-get -y autoremove && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y && apt-get autoremove \
+        && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
         qt5-default \
@@ -51,39 +52,31 @@ RUN apt-get update && apt-get upgrade && apt-get -y dist-upgrade && apt-get -y a
         python-pip \
         python-scipy && \
     rm -rf /var/lib/apt/lists/*
-ENV OPENCV_ROOT=/opt/opencv
-WORKDIR $OPENCV_ROOT
-ENV OPENCV_VERSION="3.4.0"
-RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip
-    && unzip ${OPENCV_VERSION}.zip \
-    && cd opencv$OPENCV_VERSION \
-    && mkdir build \
-    && cd build \
-    && cmake ../ \
-    && make install  \
-    && rm /${OPENCV_VERSION}.zip \
-    && rm -r /opencv-${OPENCV_VERSION}
-RUN ln -s \
-  /usr/local/python/cv2/python-3.7/cv2.cpython-37m-x86_64-linux-gnu.so \
-/usr/local/lib/python3.7/site-packages/cv2.so
 
 
 ENV CAFFE_ROOT=/opt/caffe
 WORKDIR $CAFFE_ROOT
 
 # FIXME: clone a specific git tag and use ARG instead of ENV once DockerHub supports this.
-ENV CLONE_TAG=ssd
 
-RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/RamatovInomjon/caffe.git . && \
+
+RUN git clone -b ssd --depth 1 https://github.com/RamatovInomjon/caffe.git . && \
     for req in $(cat python/requirements.txt) pydot; do pip install $req; done && \
-    mkdir build \
-    && cp Makefile.config.example Makefile.config \
-    #&& cd build && \
-    #cmake -DUSE_CUDNN=1 .. && \
-    && make all -j"$(nproc)" \ 
-    && make test -j"$(nproc)" \ 
-    && make runtest -j"$(nproc)" \ 
-    && make pycaffe -j"$(nproc)" \
+    mkdir build && \
+    cp Makefile.config.example Makefile.config && \
+    cd opencv \
+    && mkdir build \
+    && cd build \
+    && cmake ../ \
+    && make install  \
+    && rm -r /opencv
+RUN ln -s \
+  /usr/local/python/cv2/python-3.7/cv2.cpython-37m-x86_64-linux-gnu.so \
+/usr/local/lib/python3.7/site-packages/cv2.so
+RUN make all -j"$(nproc)" && \ 
+    make test -j"$(nproc)" && \ 
+    make runtest -j"$(nproc)" && \ 
+    make pycaffe -j"$(nproc)" \
 
 ENV PYCAFFE_ROOT $CAFFE_ROOT/python
 ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
