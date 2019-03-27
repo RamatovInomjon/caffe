@@ -37,8 +37,7 @@ RUN git clone -b ssd --depth 1 https://github.com/RamatovInomjon/caffe.git . && 
     mkdir build && \
     cp Makefile.config.example Makefile.config
 RUN make all  && \
-    make install && \
-    make pycaffe 
+    make pycaffe
 
 ENV PYCAFFE_ROOT $CAFFE_ROOT/python
 ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
