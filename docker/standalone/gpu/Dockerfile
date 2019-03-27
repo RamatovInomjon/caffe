@@ -1,5 +1,5 @@
 FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
-LABEL SIMACM
+LABEL SIMACM InomjonRamatov
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pkg-config \
         wget \
         libatlas-base-dev \
+        libopenblas-base \
+        libopenblas-dev \
         libboost-all-dev \
         libgflags-dev \
         libgoogle-glog-dev \
@@ -34,9 +36,8 @@ RUN git clone -b ssd --depth 1 https://github.com/RamatovInomjon/caffe.git . && 
     for req in $(cat python/requirements.txt) pydot; do pip install $req; done && \
     mkdir build && \
     cp Makefile.config.example Makefile.config
-RUN make all -j && \
-    make test -j && \
-    make runtest -j && \
+RUN make all  && \
+    make install && \
     make pycaffe 
 
 ENV PYCAFFE_ROOT $CAFFE_ROOT/python
