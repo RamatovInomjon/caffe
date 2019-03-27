@@ -1,40 +1,11 @@
 FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
-MAINTAINER simcam
+LABEL SIMACM
 
-RUN apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y && apt-get autoremove \
-        && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
-        qt5-default \
-        libvtk6-dev \
-        zlib1g-dev \
-        libjpeg-dev \
-        libwebp-dev \
-        libpng-dev \
-        libtiff5-dev \
-        libjasper-dev  \
-        libopenexr-dev \
-        libgdal-dev \
-        libdc1394-22-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libswscale-dev \
-        libvorbis-dev \
-        libtheora-dev \
-        libxvidcore-dev \
-        libx264-dev \
-        yasm \
-        libopencore-amrnb-dev \
-        libopencore-amrwb-dev \
-        libv4l-dev \
-        libxine2-dev \
-        libtbb-dev \
-        libeigen3-dev \
-        python-tk \
-        python3-dev \
-        python3-tk \
-        python3-numpy \
         git \
+        pkg-config \
         wget \
         libatlas-base-dev \
         libboost-all-dev \
@@ -50,33 +21,23 @@ RUN apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y && apt-get a
         python-dev \
         python-numpy \
         python-pip \
+        python-setuptools \
         python-scipy && \
     rm -rf /var/lib/apt/lists/*
-
 
 ENV CAFFE_ROOT=/opt/caffe
 WORKDIR $CAFFE_ROOT
 
-# FIXME: clone a specific git tag and use ARG instead of ENV once DockerHub supports this.
-
+RUN pip install --upgrade pip==9.0.1
 
 RUN git clone -b ssd --depth 1 https://github.com/RamatovInomjon/caffe.git . && \
     for req in $(cat python/requirements.txt) pydot; do pip install $req; done && \
     mkdir build && \
-    cp Makefile.config.example Makefile.config && \
-    cd opencv \
-    && mkdir build \
-    && cd build \
-    && cmake ../ \
-    && make install  \
-    && rm -r /opencv
-RUN ln -s \
-  /usr/local/python/cv2/python-3.7/cv2.cpython-37m-x86_64-linux-gnu.so \
-/usr/local/lib/python3.7/site-packages/cv2.so
-RUN make all -j"$(nproc)" && \ 
-    make test -j"$(nproc)" && \ 
-    make runtest -j"$(nproc)" && \ 
-    make pycaffe -j"$(nproc)" \
+    cp Makefile.config.example Makefile.config
+RUN make all -j && \
+    make test -j && \
+    make runtest -j && \
+    make pycaffe 
 
 ENV PYCAFFE_ROOT $CAFFE_ROOT/python
 ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
